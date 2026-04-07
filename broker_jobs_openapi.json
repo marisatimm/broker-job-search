@@ -1,0 +1,144 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Broker Job Search API",
+    "description": "Search for job postings from Swiss insurance brokers using Google Jobs via SerpApi",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://DEIN-CODE-ENGINE-URL.eu-de.codeengine.appdomain.cloud",
+      "description": "IBM Code Engine"
+    }
+  ],
+  "paths": {
+    "/search": {
+      "get": {
+        "operationId": "search_job_postings",
+        "summary": "Search for job postings for a broker",
+        "description": "Searches for job postings from a Swiss insurance broker using Google Jobs. Returns structured job listings with title, company, location, date and URL.",
+        "parameters": [
+          {
+            "name": "broker_name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Name des Brokers, z.B. Kessler oder Funk"
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Optionale Suchanfrage. Standard: broker_name + Schweiz"
+          },
+          {
+            "name": "location",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Switzerland"
+            },
+            "description": "Standort-Filter"
+          },
+          {
+            "name": "hl",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "de"
+            },
+            "description": "Sprache der Ergebnisse"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolgreiche Suchergebnisse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "broker": {
+                      "type": "string",
+                      "description": "Name des gesuchten Brokers"
+                    },
+                    "total_results": {
+                      "type": "integer",
+                      "description": "Anzahl gefundener Stellen"
+                    },
+                    "jobs": {
+                      "type": "array",
+                      "description": "Liste der gefundenen Stelleninserate",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "search_date": {
+                            "type": "string",
+                            "description": "Datum der Suche im Format YYYY-MM-DD"
+                          },
+                          "broker": {
+                            "type": "string",
+                            "description": "Name des Brokers"
+                          },
+                          "title": {
+                            "type": "string",
+                            "description": "Stellentitel"
+                          },
+                          "company_name": {
+                            "type": "string",
+                            "description": "Name des Unternehmens"
+                          },
+                          "location": {
+                            "type": "string",
+                            "description": "Standort"
+                          },
+                          "published_date": {
+                            "type": "string",
+                            "description": "Publikationsdatum im Format YYYY-MM-DD"
+                          },
+                          "source": {
+                            "type": "string",
+                            "description": "Quelle des Inserats"
+                          },
+                          "url": {
+                            "type": "string",
+                            "description": "Direkter Link zur Stelle"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Fehlende oder ungültige Parameter"
+          },
+          "500": {
+            "description": "Server Fehler"
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "health_check",
+        "summary": "Health check",
+        "description": "Checks if the API is running",
+        "responses": {
+          "200": {
+            "description": "API is running"
+          }
+        }
+      }
+    }
+  }
+}
