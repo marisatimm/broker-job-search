@@ -40,6 +40,31 @@ def get_best_link(job):
     return job.get("share_link", "")
 
 
+def is_matching_company(company_name, broker_name):
+    """Prueft ob der Firmenname zum gesuchten Broker passt."""
+    company = company_name.lower().strip()
+    broker = broker_name.lower().strip()
+
+    suffixes = [" ag", " gmbh", " sa", " ltd", " inc", " co", " & co",
+                " schweiz", " switzerland", " holding"]
+    company_clean = company
+    broker_clean = broker
+    for suffix in suffixes:
+        company_clean = company_clean.replace(suffix, "").strip()
+        broker_clean = broker_clean.replace(suffix, "").strip()
+
+    broker_core = broker_clean.split()[0] if broker_clean.split() else broker_clean
+
+    if broker_clean in company_clean:
+        return True
+    if company_clean in broker_clean:
+        return True
+    if broker_core in company_clean and len(broker_core) > 3:
+        return True
+
+    return False
+
+
 @app.route("/search", methods=["GET"])
 def search_jobs():
     broker_name = request.args.get("broker_name", "")
@@ -49,6 +74,7 @@ def search_jobs():
     query = request.args.get("query", f"{broker_name} Schweiz")
     location = request.args.get("location", "Switzerland")
     language = request.args.get("hl", "de")
+    filter_company = request.args.get("filter_company", "true").lower() == "true"
 
     params = {
         "engine": "google_jobs",
@@ -63,13 +89,20 @@ def search_jobs():
         results = search.get_dict()
 
         jobs = []
+        skipped = 0
         for job in results.get("jobs_results", []):
+            company_name = job.get("company_name", "")
+
+            if filter_company and not is_matching_company(company_name, broker_name):
+                skipped += 1
+                continue
+
             posted_at = job.get("detected_extensions", {}).get("posted_at", "")
             jobs.append({
                 "search_date": datetime.now().strftime("%Y-%m-%d"),
                 "broker": broker_name,
                 "title": job.get("title", ""),
-                "company_name": job.get("company_name", ""),
+                "company_name": company_name,
                 "location": job.get("location", ""),
                 "published_date": parse_date(posted_at),
                 "posted_at_raw": posted_at,
@@ -82,6 +115,7 @@ def search_jobs():
             "broker": broker_name,
             "query": query,
             "total_results": len(jobs),
+            "skipped_other_companies": skipped,
             "jobs": jobs
         })
 
