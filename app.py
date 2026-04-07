@@ -41,25 +41,32 @@ def get_best_link(job):
 
 
 def is_matching_company(company_name, broker_name):
-    """Prueft ob der Firmenname zum gesuchten Broker passt."""
     company = company_name.lower().strip()
     broker = broker_name.lower().strip()
 
-    suffixes = [" ag", " gmbh", " sa", " ltd", " inc", " co", " & co",
-                " schweiz", " switzerland", " holding"]
+    # Entferne Rechtsform-Suffixe
+    suffixes = [" ag", " gmbh", " sa", " ltd", " inc", " co.", " & co",
+                " schweiz", " switzerland", " holding", " group"]
     company_clean = company
     broker_clean = broker
     for suffix in suffixes:
         company_clean = company_clean.replace(suffix, "").strip()
         broker_clean = broker_clean.replace(suffix, "").strip()
 
-    broker_core = broker_clean.split()[0] if broker_clean.split() else broker_clean
+    # Entferne Punkte und Sonderzeichen
+    company_clean = re.sub(r'[.\-]', ' ', company_clean).strip()
+    broker_clean = re.sub(r'[.\-]', ' ', broker_clean).strip()
 
-    if broker_clean in company_clean:
+    # Exakte Übereinstimmung nach Bereinigung
+    if company_clean == broker_clean:
         return True
-    if company_clean in broker_clean:
-        return True
-    if broker_core in company_clean and len(broker_core) > 3:
+
+    # Broker-Kernname muss als ganzes Wort vorkommen
+    broker_words = broker_clean.split()
+    company_words = company_clean.split()
+    
+    # Alle Wörter des Brokers müssen im Firmennamen vorkommen
+    if all(word in company_words for word in broker_words if len(word) > 2):
         return True
 
     return False
